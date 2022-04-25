@@ -18,6 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import classification_report, mean_squared_error, r2_score, silhouette_score
+from sklearn.neural_network import MLPClassifier
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.decomposition import PCA
 from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
@@ -243,7 +244,7 @@ plt.title('Matriz de correlaciones')
 plt.tight_layout()
 plt.show()'''
 
-#Haciendo limpieza de multicolinealidad para intermedias y economicas (tienen los mismos comportamientos)
+'''#Haciendo limpieza de multicolinealidad para intermedias y economicas (tienen los mismos comportamientos)
 x.pop('OverallQual')
 x.pop('OverallCond')
 x.pop('GrLivArea')
@@ -254,7 +255,9 @@ x.pop('FullBath')
 x.pop('Fireplaces')
 x.pop('GarageCars')
 x.pop('GarageArea')
-x.pop('SalePrice')
+x.pop('SalePrice')'''
+
+print(x.head())
 
 #YA CON LIMPIEZA DE VIF
 
@@ -265,3 +268,56 @@ x_tr1= x_train_reg.values
 y_tr1= y_train_reg.values
 x_t = x_test_reg.values
 y_t = y_test_reg.values
+
+# Creando el modelo RNA
+
+model = 2
+if model == 1:
+    hidden_layers = (150, 100, 50)
+    activation = 'logistic'
+else:
+    hidden_layers = (128, 256, 128, 32, 8)
+    activation = 'relu'
+
+tic = time.time()
+rna_model = MLPClassifier(hidden_layer_sizes=hidden_layers, activation=activation, solver='adam', max_iter=5000, verbose=True, random_state=1, learning_rate_init=0.001)
+rna_model.fit(x_tr1, y_tr1)
+tac = time.time()
+print(f'Time to process model:', tac - tic)
+
+
+#Utilizando datos de entrenamiento
+y_pred_train = rna_model.predict(x_train_reg.values)
+accuracy=accuracy_score(y_train_reg.values,y_pred_train)
+precision =precision_score(y_train_reg.values, y_pred_train,average='weighted')
+recall =  recall_score(y_train_reg.values, y_pred_train,average='weighted')
+f1 = f1_score(y_train_reg.values,y_pred_train,average='weighted')
+print('Accuracy: ',accuracy)
+print('Precision: ',precision)
+print('Recall: ',recall)
+
+cm = confusion_matrix(y_train_reg.values,y_pred_train)
+sn.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Económicas', 'Intermedias', 'Caras'], yticklabels=['Económicas', 'Intermedias', 'Caras'])
+plt.title('Matriz de Confusion')
+plt.ylabel('Clasificación real')
+plt.xlabel('Clasificación predicha')
+plt.show()
+print('Matriz de confusion con valores de entrenamiento \n',cm)
+
+#Utilizando datos de prueba
+y_pred = rna_model.predict(x_test_reg.values)
+accuracy=accuracy_score(y_test_reg.values,y_pred)
+precision =precision_score(y_test_reg.values, y_pred,average='weighted')
+recall =  recall_score(y_test_reg.values, y_pred,average='weighted')
+f1 = f1_score(y_test_reg.values,y_pred,average='weighted')
+print('Accuracy: ',accuracy)
+print('Precision: ',precision)
+print('Recall: ',recall)
+
+cm = confusion_matrix(y_test_reg.values,y_pred)
+sn.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Económicas', 'Intermedias', 'Caras'], yticklabels=['Económicas', 'Intermedias', 'Caras'])
+plt.title('Matriz de Confusion')
+plt.ylabel('Clasificación real')
+plt.xlabel('Clasificación predicha')
+plt.show()
+print('Matriz de confusion con valores de test\n',cm)
