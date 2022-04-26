@@ -18,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import classification_report, mean_squared_error, r2_score, silhouette_score
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.decomposition import PCA
 from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
@@ -271,7 +271,7 @@ y_t = y_test_reg.values
 
 # Creando el modelo RNA
 
-model = 2
+model = 1
 if model == 1:
     hidden_layers = (150, 100, 50)
     activation = 'logistic'
@@ -284,7 +284,6 @@ rna_model = MLPClassifier(hidden_layer_sizes=hidden_layers, activation=activatio
 rna_model.fit(x_tr1, y_tr1)
 tac = time.time()
 print(f'Time to process model:', tac - tic)
-
 
 #Utilizando datos de entrenamiento
 y_pred_train = rna_model.predict(x_train_reg.values)
@@ -321,3 +320,128 @@ plt.ylabel('Clasificación real')
 plt.xlabel('Clasificación predicha')
 plt.show()
 print('Matriz de confusion con valores de test\n',cm)
+
+# Regresion
+
+houses_df = houses_copy.copy()
+y = houses_df.pop('SalePrice')
+x = houses_df
+
+x.pop('MasVnrArea')
+x.pop('GarageYrBlt')
+
+print(x.head())
+
+x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x, y, test_size=0.3, train_size=0.7, random_state=0)
+
+# use all as predictor
+x_tr1= x_train_reg.values
+y_tr1= y_train_reg.values
+x_t = x_test_reg.values
+y_t = y_test_reg.values
+
+# Creando el modelo RNA de regresion
+
+model = 1
+if model == 1:
+    hidden_layers = (150, 100, 50)
+    activation = 'identity'
+    lri = 0.0001
+else:
+    hidden_layers = (128, 256, 128, 32, 8)
+    activation = 'relu'
+    lri = 0.0001
+
+tic = time.time()
+rna_model = MLPRegressor(hidden_layer_sizes=hidden_layers, activation=activation, solver='adam', max_iter=5000, verbose=True, random_state=1, learning_rate_init=lri)
+rna_model.fit(x_tr1, y_tr1)
+tac = time.time()
+print(f'Time to process model:', tac - tic)
+
+#Utilizando datos de entrenamiento
+y_pred_train = rna_model.predict(x_train_reg.values)
+accuracy = mean_squared_error(y_train_reg,y_pred_train)
+precision = r2_score(y_train_reg, y_pred_train)
+print('Train Accuracy: ',accuracy)
+print('Train Precision: ',precision)
+
+x_train_reg['SalePrice'] = y_pred_train
+plt.scatter(x_train_reg.SalePrice, y_train_reg, color='darkblue')
+plt.plot(x_train_reg.SalePrice, y_pred_train, color='red', linewidth=2)
+plt.title('Predicciones')
+plt.xlabel('SalePrice')
+plt.ylabel('SalePrice')
+plt.show()
+
+#RESIDUALES
+residuales = y_tr1 - y_pred_train
+print('Cantidad de residuales: ',len(residuales))
+
+plt.plot(x_tr1,residuales, 'o', color='orange')
+plt.title("Gráfico de Residuales")
+plt.xlabel("Variable independiente")
+plt.ylabel("Residuales")
+
+plt.show()
+sns.distplot(residuales);
+plt.title("Residuales")
+plt.show()
+
+data = residuales
+plt.hist(data,color='green')
+plt.title(f'Histograma')
+plt.xlabel(data)
+plt.ylabel('Cantidad')
+plt.show()
+qqplot(data , line='s')
+plt.title(f'QQplot para residuales')
+plt.show()
+
+plt.boxplot(residuales)
+plt.show()
+
+print('Normal Test ',normaltest(residuales))
+
+#Utilizando datos de prueba
+y_pred = rna_model.predict(x_test_reg.values)
+accuracy = mean_squared_error(y_test_reg,y_pred)
+precision = r2_score(y_test_reg, y_pred)
+print('Test Accuracy: ',accuracy)
+print('Test Precision: ',precision)
+
+x_test_reg['SalePrice'] = y_pred
+plt.scatter(x_test_reg.SalePrice, y_test_reg, color='darkblue')
+plt.plot(x_test_reg.SalePrice, y_pred, color='red', linewidth=2)
+plt.title('Predicciones')
+plt.xlabel('SalePrice')
+plt.ylabel('SalePrice')
+plt.show()
+
+#RESIDUALES
+residuales = y_t - y_pred
+print('Cantidad de residuales: ',len(residuales))
+
+plt.plot(x_t,residuales, 'o', color='orange')
+plt.title("Gráfico de Residuales")
+plt.xlabel("Variable independiente")
+plt.ylabel("Residuales")
+
+plt.show()
+sns.distplot(residuales);
+plt.title("Residuales")
+plt.show()
+
+data = residuales
+plt.hist(data,color='green')
+plt.title(f'Histograma')
+plt.xlabel(data)
+plt.ylabel('Cantidad')
+plt.show()
+qqplot(data , line='s')
+plt.title(f'QQplot para residuales')
+plt.show()
+
+plt.boxplot(residuales)
+plt.show()
+
+print('Normal Test ',normaltest(residuales))
